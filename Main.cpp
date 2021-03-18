@@ -3,48 +3,82 @@
 #include <ctime>
 using namespace std;
 
-void PrintMatr(int**, int, int, const char*); //Функция вывода матрицы
-void PrintMatr(double**, int, int, const char*); //
+void GetMatr(double**, int, int); //Функция заполнения матрицы своими элементами
+void Dimension(int&, int&); //Функция размерности
+void PrintMatr(double**, int, int, const char*); //Функция вывода матрицы
 void PrintVect(double*, int, const char*); //Функция вывода решения
-void NewMatr(int**&, int, int); //Функция выделения памяти
-void NewMatr(double**&, int, int); //
-void DelMatr(int**&, int, int); //Функция освобождения памяти
-void DelMatr(double**&, int, int); //
-void GetRandMatr(int**, int, int, int, int); //Функция рандомного заполнения матрицы
-void TriangMatr(int**, double**, int);
-void Solve(int**, double*, int);
+void NewMatr(double**&, int, int); //Функция выделения памяти
+void DelMatr(double**&, int, int); //Функция освобождения памяти
+void GetRandMatr(double**, int, int, int, int); //Функция рандомного заполнения матрицы
+bool TriangMatr(double**, double**, double&, int); //Функция триангуляции матрицы
+bool Solve(double**, double**, double*, double&, int); //Функция решения матрицы
+void Delta(double**, double*, int, int); //Функция погрешности
+void HilbertMatrix(double**, int, int); //
 
 int main()
 {
 	setlocale(LC_ALL, "Rus");
 	int key = 0;
-	int n = 3, m = 4;
+	int n, m;
+	double determ = 1;
+	double** A;
+	double** B;
+	Dimension(n, m);
 	double* x = new double[n];
-	int** A;
 	do
 	{
-		cout << "1) СЛАУ методом Гаусса" << endl
-			<< "2) Определитель матрицы методом Гаусса" << endl
-			<< "3) Обратная матрица методом Гаусса" << endl
-			<< "0) выход" << endl;
-		cout << endl << "Выберите действие: ";
+		cout << "1) Random matrix" << endl
+			<< "2) Another matrix" << endl
+			<< "3) Change dimension" << endl
+			<< "4) Hilbert Matrix" << endl
+			<< "0) Exit" << endl;
+		cout << endl << "Select an action: ";
 		cin >> key;
 		cout << endl;
 		switch (key)
 		{
 		case 1:
 			NewMatr(A, n, m);
+			NewMatr(B, n, m);
 			GetRandMatr(A, n, m, 1, 10);
 			PrintMatr(A, n, m, "A");
-			Solve(A, x, n);
-			PrintVect(x, n, "x");
+			if (Solve(A, B, x, determ, n))
+			{
+				PrintVect(x, n, "x");
+				Delta(A, x, n, m);
+			}
 			DelMatr(A, n, m);
+			DelMatr(B, n, m);
 			break;
 		case 2:
-			
+			NewMatr(A, n, m);
+			NewMatr(B, n, m);
+			GetMatr(A, n, m);
+			PrintMatr(A, n, m, "A");
+			if (Solve(A, B, x, determ, n))
+			{
+				PrintVect(x, n, "x");
+				Delta(A, x, n, m);
+			}
+			DelMatr(A, n, m);
+			DelMatr(B, n, m);
 			break;
 		case 3:
-			
+			Dimension(n, m);
+			cout << "Dimension changed" << endl;
+			break;
+		case 4:
+			NewMatr(A, n, m);
+			NewMatr(B, n, m);
+			HilbertMatrix(A, n, m);
+			PrintMatr(A, n, m, "A");
+			if (Solve(A, B, x, determ, n))
+			{
+				PrintVect(x, n, "x");
+				Delta(A, x, n, m);
+			}
+			DelMatr(A, n, m);
+			DelMatr(B, n, m);
 			break;
 		default:
 			if (key != 0)
@@ -58,18 +92,41 @@ int main()
 	x = nullptr;
 }
 
-void PrintMatr(int** M, int n, int m, const char* namematr)
+void HilbertMatrix(double** M, int n, int m)
 {
-	cout << endl << " " << namematr << ":" << endl;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m - 1; j++)
+		{
+			M[i][j] = (1.0/(j + i + 1));
+		}
+	}
+	for (int i = 0; i < n; i++)
+	{
+		cout << "Enter element [" << i + 1 << "][" << m - 1 << "]: ";
+		cin >> M[i][m - 1];
+	}
+}
+
+void GetMatr(double** M, int n, int m)
+{
+	cout << endl;
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < m; j++)
 		{
-			cout << "   " << M[i][j];
+			cout << "Enter element [" << i + 1 << "][" << j + 1 << "]: ";
+			cin >> M[i][j];
 		}
-		cout << endl;
 	}
-	cout << endl;
+}
+
+void Dimension(int& n, int& m)
+{
+	cout << "Enter the dimension of the matrix:" << endl
+		<< "n: "; cin >> n;
+	cout << "m: "; cin >> m; cout << endl;
+	m = m + 1;
 }
 
 void PrintMatr(double** M, int n, int m, const char* namematr)
@@ -79,7 +136,7 @@ void PrintMatr(double** M, int n, int m, const char* namematr)
 	{
 		for (int j = 0; j < m; j++)
 		{
-			cout << "   " << M[i][j];
+			cout << setw(11) << M[i][j];
 		}
 		cout << endl;
 	}
@@ -88,22 +145,12 @@ void PrintMatr(double** M, int n, int m, const char* namematr)
 
 void PrintVect(double* x, int n, const char* namevect)
 {
-	cout << endl << " " << namevect << ":" << endl;
+	cout << " " << namevect << ":" << endl;
 	for (int i = 0; i < n; i++)
 	{
-		cout << "    " << x[i];
+		cout << setw(11) << x[i];
 	}
-	cout << endl;
-}
-
-void NewMatr(int**& M, int n, int m)
-{
-	cout << "\t-New int matr-" << endl;
-	M = new int* [n];
-	for (int i = 0; i < n; i++)
-	{
-		M[i] = new int[m];
-	}
+	cout << endl << endl;
 }
 
 void NewMatr(double**& M, int n, int m)
@@ -116,27 +163,18 @@ void NewMatr(double**& M, int n, int m)
 	}
 }
 
-void DelMatr(int**& M, int n, int m)
-{
-	cout << "\t-Delete int matr-" << endl;
-	for (int i = 0; i < n; i++)
-	{
-		delete[] M[i];
-	}
-	delete[] M;
-}
-
 void DelMatr(double**& M, int n, int m)
 {
-	cout << "\t-Delete double matr-" << endl;
+	cout << "\t-Delete double matr-" << endl << endl;
 	for (int i = 0; i < n; i++)
 	{
 		delete[] M[i];
 	}
 	delete[] M;
+	M = nullptr;
 }
 
-void GetRandMatr(int** M, int n, int m, int a, int b)
+void GetRandMatr(double** M, int n, int m, int a, int b)
 {
 	srand(time(0));
 	for (int i = 0; i < n; i++)
@@ -148,9 +186,12 @@ void GetRandMatr(int** M, int n, int m, int a, int b)
 	}
 }
 
-void TriangMatr(int** A, double** B, int n)
+bool TriangMatr(double** A, double** B, double& determ, int n) //Триангуляция матрицы + Определитель
 {
-	double coefficient;
+	double koef;
+	double max = 0;
+	double zeroCheck;
+	unsigned int maxIndex;
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n + 1; j++)
@@ -158,35 +199,105 @@ void TriangMatr(int** A, double** B, int n)
 			B[i][j] = A[i][j];
 		}
 	}
-	for (int k = 0; k < n; k++)
+	for (int k = 0; k < n; k++) //Триангуляция построчно
 	{
-		for (int i = k + 1; i < n; i++)
+		if (B[k][k] == 0) //Выбор ведущего элеента
 		{
-			coefficient = -1. * B[i][k] / B[k][k];
-			for (int j = k; j < n + 1; j++)
+			for (int i = k + 1; i < n; i++) //Поиск подходящей строки
 			{
-				B[i][j] = B[i][j] + B[k][j] * coefficient;
+				if (fabs(B[i][k]) > max) 
+				{
+					max = fabs(B[i][k]);
+					maxIndex = i;
+				}
+			}
+			if (max > 0) 
+			{
+				for (int j = 0; j < n + 1; j++) 
+				{
+					swap(B[k][j], B[maxIndex][j]);
+				}
+				determ *= -1;
+			}
+			else 
+			{
+				cout << endl << "Unable to select leading element" << endl << endl;
+				return false;
 			}
 		}
+		zeroCheck = 0;
+		for (int i = 0; i < n + 1; i++) zeroCheck += B[k][i];
+		if (zeroCheck == 0) 
+		{
+			cout << endl << "Collinear or null strings are available" << endl << endl;
+			return false;
+		}
+		for (int i = k + 1; i < n; i++) 
+		{
+			koef = -1 * B[i][k] / B[k][k];
+			for (int j = k; j < n + 1; j++) B[i][j] = B[i][j] + B[k][j] * koef;//Преобразование последующих строк
+		}
+		determ *= B[k][k];//Вычисление определителя
 	}
 	PrintMatr(B, n, n + 1, "B");
+	cout << " Matrix determinant = " << determ << endl << endl;
+	return true;
 }
 
-void Solve(int** A, double* x, int n)
+bool Solve(double** A, double** B, double* x, double& determ, int n) // Решение по Гаусу
 {
 	double res = 0;
-	double** B;
-	NewMatr(B, n, n + 1);
-	TriangMatr(A, B, n);
-	for (int i = n - 1; i >= 0; i--)
+	double zeroCheck;
+	if (TriangMatr(A, B, determ, n) == true) //Подсчёт вектора-решения
 	{
-		res = 0;
-		for (int j = i + 1; j <= n - 1; j++)
+		for (int i = n - 1; i >= 0; i--) 
 		{
-			res = res - x[j] * B[i][j];
+			res = 0;
+			for (int j = i + 1; j <= n - 1; j++) res = res - x[j] * B[i][j];
+			res += B[i][n];
+			x[i] = res / B[i][i];
 		}
-		res += B[i][n];
-		x[i] = res / B[i][i];
+		for (int i = 0; i < n; i++) //Проверка на нулевые строки
+		{
+			zeroCheck = 0;
+			for (int j = 0; j < n + 1; j++) 
+			{
+				zeroCheck += B[i][j];
+			}
+			if (zeroCheck == 0) 
+			{
+				cout << endl << "Collinear or null strings are available" << endl << endl;
+				return false;
+			}
+		}
+		return true;
 	}
-	DelMatr(B, n, n + 1);
+	cout << endl << "The system has no single solution" << endl << endl;
+	return false;
+}
+
+void Delta(double **A, double* x, int n, int m)
+{
+	double* y = new double[n];
+	for (int i = 0; i < n; i++) 
+	{
+		double res = 0;
+		for (int j = 0; j < n; j++) 
+		{
+			res += A[i][j] * x[j];
+		}
+		y[i] = res;
+	}
+	double max;
+	max = fabs(y[0] - A[0][m - 1]);
+	for (int i = 1; i < n; i++) 
+	{
+		if (fabs(y[i] - A[i][m - 1]) > max)
+		{
+			max = fabs(y[i] - A[i][m - 1]);
+		}
+	}
+	delete[] y;
+	y = NULL;
+	cout << " Delta = " << max << endl << endl;
 }
