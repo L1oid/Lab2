@@ -136,7 +136,7 @@ void PrintMatr(double** M, int n, int m, const char* namematr)
 	{
 		for (int j = 0; j < m; j++)
 		{
-			cout << setw(11) << M[i][j];
+			cout << setw(14) << M[i][j];
 		}
 		cout << endl;
 	}
@@ -148,7 +148,7 @@ void PrintVect(double* x, int n, const char* namevect)
 	cout << " " << namevect << ":" << endl;
 	for (int i = 0; i < n; i++)
 	{
-		cout << setw(11) << x[i];
+		cout << setw(14) << x[i];
 	}
 	cout << endl << endl;
 }
@@ -188,6 +188,7 @@ void GetRandMatr(double** M, int n, int m, int a, int b)
 
 bool TriangMatr(double** A, double** B, double& determ, int n) //“риангул€ци€ матрицы + ќпределитель
 {
+	determ = 1;
 	double koef;
 	double max = 0;
 	double zeroCheck;
